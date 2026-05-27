@@ -10,3 +10,86 @@
     "port": 50572,
     "version": "",
     "try-creative": false
+
+    const mineflayer = require('mineflayer');
+const settings = require('./settings.json');
+
+let bot;
+let afkInterval;
+
+function startBot() {
+    console.log(`[${new Date().toLocaleTimeString()}] Starting bot to connect to ${settings.ip}...`);
+
+    bot = mineflayer.createBot({
+        host: settings.ip,
+        port: parseInt(settings.port),
+        username: settings.botName,
+        version: settings.version,
+        auth: settings.auth
+    });
+
+    // Event: When the bot successfully joins the server
+    bot.on('spawn', () => {
+        console.log(`[${new Date().toLocaleTimeString()}] Bot [${bot.username}] successfully joined the server.`);
+        startAntiAFK();
+    });
+
+    // Event: When the bot disconnects or gets kicked
+    bot.on('end', (reason) => {
+        console.log(`[${new Date().toLocaleTimeString()}] Bot disconnected. Reason: ${reason}`);
+        console.log('Reconnecting in 15 seconds...');
+        
+        clearInterval(afkInterval);
+        
+        setTimeout(() => {
+            startBot();
+        }, 15000);
+    });
+
+    // Event: Handling system errors to prevent crash
+    bot.on('error', (err) => {
+        console.error(`[System Error]: ${err.message}`);
+    });
+}
+
+function startAntiAFK() {
+    console.log('Anti-AFK system activated: movement, sprinting, and jumping enabled.');
+
+    // Changes movement action every 5 seconds (5000ms)
+    afkInterval = setInterval(() => {
+        if (!bot || !bot.entity) return;
+
+        const action = Math.floor(Math.random() * 4);
+
+        // Reset all current movements before applying a new one
+        bot.clearControlStates();
+
+        switch (action) {
+            case 0: // Walk forward and jump
+                bot.setControlState('forward', true);
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 500);
+                break;
+                
+            case 1: // Sprint backward
+                bot.setControlState('back', true);
+                bot.setControlState('sprint', true);
+                break;
+
+            case 2: // Move right and look around randomly
+                bot.setControlState('right', true);
+                bot.look(Math.random() * Math.PI * 2, 0);
+                break;
+
+            case 3: // Move left and jump
+                bot.setControlState('left', true);
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 500);
+                break;
+        }
+
+    }, 5000);
+}
+
+// Run the bot
+startBot();
