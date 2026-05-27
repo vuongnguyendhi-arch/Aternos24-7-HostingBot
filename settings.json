@@ -10,8 +10,7 @@
     "port": 50572,
     "version": "",
     "try-creative": false
-
-    const mineflayer = require('mineflayer');
+const mineflayer = require('mineflayer');
 const settings = require('./settings.json');
 
 let bot;
